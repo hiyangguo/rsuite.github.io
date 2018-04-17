@@ -6,6 +6,14 @@ const HtmlwebpackPlugin = require('html-webpack-plugin');
 const markdownRenderer = require('react-markdown-reader').renderer;
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
+const THEME_PATH = 'src/less/themes';
+
+const resolveToStaticPath = relative => filePath => path.resolve(__dirname, relative, filePath);
+const resolveToThemeStaticPath = resolveToStaticPath(THEME_PATH);
+const themeFileNameSet = fs.readdirSync(THEME_PATH);
+const themePaths = themeFileNameSet.map(resolveToThemeStaticPath);
+const getThemeName = fileName => `theme-${path.basename(fileName, path.extname(fileName))}`;
+
 const iconPath = ['./node_modules/rsuite/styles', '../rsuite/styles'].map(relativePath =>
   path.resolve(__dirname, relativePath)
 );
@@ -13,7 +21,7 @@ const iconPath = ['./node_modules/rsuite/styles', '../rsuite/styles'].map(relati
 const { NODE_ENV, STYLE_DEBUG } = process.env;
 const __PRO__ = NODE_ENV === 'production';
 
-const extractLess = new ExtractTextPlugin('style.[hash].css');
+const extractLess = new ExtractTextPlugin('style.css');
 
 const getStyleLoader = () => {
   const sourceMap = STYLE_DEBUG === 'SOURCE' ? '?sourceMap' : '';
@@ -24,6 +32,17 @@ const getStyleLoader = () => {
     loader: `${loader}${sourceMap}`
   }));
 };
+
+const themesExtractLessSet = themeFileNameSet.map(fileName => new ExtractTextPlugin(`${getThemeName(fileName)}.css`))
+const themeLoaderSet = themeFileNameSet.map((fileName, index) => {
+  return {
+    test: /\.(less|css)$/,
+    include: resolveToThemeStaticPath(fileName),
+    loader: themesExtractLessSet[index].extract({
+      use: getStyleLoader()
+    })
+  }
+});
 
 module.exports = {
   devServer: {
@@ -36,7 +55,8 @@ module.exports = {
   },
   entry: {
     polyfills: './src/polyfills.js',
-    app: './src/index.js'
+    app: './src/index.js',
+    themes: './src/themes.js'
   },
   output: {
     filename: '[name].bundle.js?[hash]',
@@ -55,6 +75,7 @@ module.exports = {
       },
       {
         test: /\.(less|css)$/,
+        exclude: themePaths,
         loader: extractLess.extract({
           use: getStyleLoader(),
           // use style-loader in development
@@ -125,18 +146,22 @@ module.exports = {
             }
           }
         ]
-      }
+      },
+      ...themeLoaderSet
     ]
   },
   plugins: [
     extractLess,
+    ...themesExtractLessSet,
     new webpack.NamedModulesPlugin(),
     // new webpack.HotModuleReplacementPlugin(),
     new HtmlwebpackPlugin({
       title: 'RSUITE | 一套 React 的 UI 组件库',
       template: 'src/index.html',
-      inject: true
-    })
+      inject: true,
+      hash: true,
+      excludeChunks: ['themes'],
+    }),
   ],
   devtool: STYLE_DEBUG === 'SOURCE' && 'source-map'
 };
