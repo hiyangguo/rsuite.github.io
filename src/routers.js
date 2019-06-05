@@ -238,6 +238,22 @@ export const createRouters = (locale, onEnter, onEntered) => {
         />
 
         <Route
+          path="badge"
+          getComponents={(location, callback) => {
+            onEnter && onEnter();
+            require.ensure([], require => {
+              const getComponent = require('./components/badge')['default'];
+              const component = getComponent(locale);
+              callback && callback(null, component);
+              onEntered && onEntered();
+            });
+          }}
+          onEnter={() => {
+            setTitle('Badge - components');
+          }}
+        />
+
+        <Route
           path="dropdown"
           getComponents={(location, callback) => {
             onEnter && onEnter();

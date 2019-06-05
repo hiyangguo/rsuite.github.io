@@ -97,8 +97,18 @@
     "id": "placeholder",
     "name": "Placeholder",
     "title": "占位符",
-    "components": ["Placeholder.Graph", "Placeholder.Grid","Placeholder.Paragraph"],
+    "components": [
+      "Placeholder.Graph",
+      "Placeholder.Grid",
+      "Placeholder.Paragraph"
+    ],
     "designHash": "artboard_placeholder"
+  },
+  {
+    "id": "badge",
+    "name": "Badge",
+    "title": "徽标",
+    "components": ["Badge"]
   },
   {
     "group": true,
